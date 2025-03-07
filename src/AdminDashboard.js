@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { db } from "./firebase";
-import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
+import React, { useEffect, useState } from 'react';
+import { db } from './firebase';
+import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 
 const AdminDashboard = () => {
   const [customers, setCustomers] = useState([]);
@@ -27,7 +27,7 @@ const AdminDashboard = () => {
   const handleActivate = async (id) => {
     try {
       const customerRef = doc(db, "customers", id);
-      const startDate = new Date().toLocaleDateString("en-US"); // MM/DD/YYYY format
+      const startDate = new Date().toLocaleDateString("en-US");
       const endDate = new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString("en-US");
 
       await updateDoc(customerRef, {
@@ -45,6 +45,27 @@ const AdminDashboard = () => {
       );
     } catch (error) {
       console.error("Error updating customer status:", error);
+    }
+  };
+
+  const handleEndService = async (id) => {
+    try {
+      const customerRef = doc(db, "customers", id);
+      await updateDoc(customerRef, {
+        status: "No service",
+        serviceStartDate: null,
+        serviceEndDate: null,
+      });
+
+      setCustomers((prevCustomers) =>
+        prevCustomers.map((customer) =>
+          customer.id === id
+            ? { ...customer, status: "No service", serviceStartDate: null, serviceEndDate: null }
+            : customer
+        )
+      );
+    } catch (error) {
+      console.error("Error ending service:", error);
     }
   };
 
@@ -78,8 +99,10 @@ const AdminDashboard = () => {
                 <td>{customer.serviceStartDate || "N/A"}</td>
                 <td>{customer.serviceEndDate || "N/A"}</td>
                 <td>
-                  {customer.status !== "Active" && (
+                  {customer.status !== "Active" ? (
                     <button onClick={() => handleActivate(customer.id)}>Mark as Active</button>
+                  ) : (
+                    <button onClick={() => handleEndService(customer.id)}>End Service</button>
                   )}
                 </td>
               </tr>
