@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { 
-  getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, setPersistence, browserLocalPersistence 
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut, setPersistence, browserSessionPersistence 
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
@@ -19,13 +19,13 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Ensure authentication persists across page refreshes
-setPersistence(auth, browserLocalPersistence)
+// Set Firebase to require sign-in every session (no automatic login)
+setPersistence(auth, browserSessionPersistence)
   .then(() => {
-    console.log("Auth persistence enabled.");
+    console.log("Firebase auth persistence set to session-only.");
   })
   .catch((error) => {
-    console.error("Error enabling auth persistence:", error);
+    console.error("Error setting auth persistence:", error);
   });
 
-export { auth, db, provider, signInWithPopup, signInWithRedirect, getRedirectResult };
+export { auth, db, provider, signInWithPopup, signOut };

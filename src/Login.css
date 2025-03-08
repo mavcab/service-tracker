@@ -65,4 +65,30 @@
     background: #005a8e; /* Darker Spectrum Blue */
     transform: scale(1.05);
   }
+  .phone-input {
+    text-align: center;
+    margin-top: 15px;
+  }
+  
+  .phone-input input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .phone-input button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  .phone-input button:hover {
+    background-color: #0056b3;
+  }
   

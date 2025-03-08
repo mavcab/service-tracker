@@ -1,66 +1,88 @@
 import React, { useEffect, useState } from "react";
 import { auth, db } from "./firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
+import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
+import "./CustomerDashboard.css";
 
 const CustomerDashboard = () => {
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [requestSent, setRequestSent] = useState(false);
 
   useEffect(() => {
     const fetchCustomer = async () => {
-      if (!auth.currentUser) {
-        console.log("No authenticated user found.");
-        navigate("/login");
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        console.log("No authenticated user detected.");
         return;
       }
 
-      console.log("Fetching customer data for:", auth.currentUser.email);
-
       try {
-        const customerRef = doc(db, "customers", auth.currentUser.email);
-        const customerSnap = await getDoc(customerRef);
+        const q = query(collection(db, "customers"), where("email", "==", currentUser.email));
+        const querySnapshot = await getDocs(q);
 
-        if (customerSnap.exists()) {
-          console.log("Customer data found:", customerSnap.data());
-          setCustomer(customerSnap.data());
+        if (!querySnapshot.empty) {
+          const docData = querySnapshot.docs[0].data();
+          setCustomer({ id: querySnapshot.docs[0].id, ...docData });
         } else {
-          console.log("No customer data found in Firestore.");
+          console.log("No customer data found.");
         }
       } catch (error) {
-        console.error("Error fetching customer details:", error);
+        console.error("Error fetching customer:", error);
       }
 
       setLoading(false);
     };
 
     fetchCustomer();
-  }, [navigate]);
+  }, []);
 
-  if (loading) return <p>Loading account details...</p>;
+  const handleRequestService = async () => {
+    if (!customer) return;
+  
+    try {
+      const customerRef = doc(db, "customers", customer.id);
+      await updateDoc(customerRef, {
+        status: "Requested Activation",
+      });
+      setRequestSent(true);
+      alert("Request sent! Admin will review your request.");
+    } catch (error) {
+      console.error("Error sending service request:", error);
+    }
+  };
+  
+
+  if (loading) return <p className="loading">Loading account details...</p>;
 
   return (
-    <div>
-      <h2>Your Account</h2>
-      {customer ? (
-        <>
-          <p><strong>Name:</strong> {customer.firstName} {customer.lastName}</p>
-          <p><strong>Email:</strong> {customer.email}</p>
-          <p><strong>Phone:</strong> {customer.phone || "Not provided"}</p>
-          <p><strong>Status:</strong> {customer.status || "No service"}</p>
-          {customer.status === "Active" ? (
-            <>
-              <p><strong>Service Start Date:</strong> {customer.serviceStartDate || "N/A"}</p>
-              <p><strong>Service Expiration:</strong> {customer.serviceEndDate || "N/A"}</p>
-            </>
-          ) : (
-            <p>Your service is currently <strong>not active</strong>.</p>
-          )}
-        </>
-      ) : (
-        <p>No account details found.</p>
-      )}
+    <div className="dashboard-container">
+      <div className="dashboard-box">
+        <h2>Welcome, {customer?.firstName}!</h2>
+        <p className="status">
+          Status:{" "}
+          <span className={customer?.status === "Active" ? "active" : "inactive"}>
+            {customer?.status || "No service"}
+          </span>
+        </p>
+
+        {customer?.status === "Active" ? (
+          <div className="service-details">
+            <p><strong>Service Start Date:</strong> {customer.serviceStartDate || "N/A"}</p>
+            <p><strong>Service Expiration:</strong> {customer.serviceEndDate || "N/A"}</p>
+          </div>
+        ) : (
+          <>
+            <p className="inactive-message">Your service is currently <strong>not active</strong>.</p>
+            {!requestSent ? (
+              <button className="request-service-btn" onClick={handleRequestService}>
+                Request Service Activation
+              </button>
+            ) : (
+              <p className="request-sent-message">Request Sent! Waiting for Admin Approval.</p>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

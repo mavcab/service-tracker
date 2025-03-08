@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { db } from './firebase';
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+import React, { useEffect, useState } from "react";
+import { db } from "./firebase";
+import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 
 const AdminDashboard = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDates, setSelectedDates] = useState({}); // Store selected dates for each customer
 
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -24,22 +25,43 @@ const AdminDashboard = () => {
     fetchCustomers();
   }, []);
 
+  // ✅ Handle Activation with Custom Dates
   const handleActivate = async (id) => {
     try {
+      const { startDate, endDate } = selectedDates[id] || {};
+  
+      if (!startDate || !endDate) {
+        alert("Please select valid start and end dates.");
+        return;
+      }
+  
+      // ✅ Convert selected dates to MM/DD/YYYY format before saving
+      const formatDate = (dateString) => {
+        if (!dateString) return "N/A";
+        const dateParts = dateString.split("-");
+        if (dateParts.length === 3) {
+          return `${dateParts[1]}/${dateParts[2]}/${dateParts[0]}`; // Convert YYYY-MM-DD to MM/DD/YYYY
+        }
+        return dateString; // If already formatted, return as is
+      };
+      
+  
+      const formattedStartDate = formatDate(startDate);
+      const formattedEndDate = formatDate(endDate);
+  
+      // ✅ Update Firestore with formatted dates
       const customerRef = doc(db, "customers", id);
-      const startDate = new Date().toLocaleDateString("en-US");
-      const endDate = new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString("en-US");
-
       await updateDoc(customerRef, {
         status: "Active",
-        serviceStartDate: startDate,
-        serviceEndDate: endDate,
+        serviceStartDate: formattedStartDate,
+        serviceEndDate: formattedEndDate,
       });
-
+  
+      // ✅ Update UI immediately
       setCustomers((prevCustomers) =>
         prevCustomers.map((customer) =>
           customer.id === id
-            ? { ...customer, status: "Active", serviceStartDate: startDate, serviceEndDate: endDate }
+            ? { ...customer, status: "Active", serviceStartDate: formattedStartDate, serviceEndDate: formattedEndDate }
             : customer
         )
       );
@@ -47,7 +69,9 @@ const AdminDashboard = () => {
       console.error("Error updating customer status:", error);
     }
   };
+  
 
+  // ✅ Handle Ending Service
   const handleEndService = async (id) => {
     try {
       const customerRef = doc(db, "customers", id);
@@ -96,8 +120,42 @@ const AdminDashboard = () => {
                 <td>{customer.email}</td>
                 <td>{customer.phone || "Not provided"}</td>
                 <td>{customer.status}</td>
-                <td>{customer.serviceStartDate || "N/A"}</td>
-                <td>{customer.serviceEndDate || "N/A"}</td>
+                <td>
+                  {customer.status !== "Active" ? (
+                    <input
+                      type="date"
+                      onChange={(e) =>
+                        setSelectedDates((prev) => ({
+                          ...prev,
+                          [customer.id]: {
+                            ...prev[customer.id],
+                            startDate: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                  ) : (
+                    customer.serviceStartDate || "N/A"
+                  )}
+                </td>
+                <td>
+                  {customer.status !== "Active" ? (
+                    <input
+                      type="date"
+                      onChange={(e) =>
+                        setSelectedDates((prev) => ({
+                          ...prev,
+                          [customer.id]: {
+                            ...prev[customer.id],
+                            endDate: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                  ) : (
+                    customer.serviceEndDate || "N/A"
+                  )}
+                </td>
                 <td>
                   {customer.status !== "Active" ? (
                     <button onClick={() => handleActivate(customer.id)}>Mark as Active</button>
