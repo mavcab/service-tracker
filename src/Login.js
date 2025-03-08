@@ -11,7 +11,7 @@ const Login = () => {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    console.log("State Updated - showPhoneInput:", showPhoneInput);
+    console.log("📢 State Updated: showPhoneInput is now", showPhoneInput);
   }, [showPhoneInput]);
 
   const handleGoogleSignIn = async () => {
@@ -20,10 +20,10 @@ const Login = () => {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
-      console.log("Google Sign-In Success:", user.email);
-      await checkUserAndRequestPhone(user);
+      console.log("✅ Google Sign-In Success:", user.email);
+      checkUserAndRequestPhone(user);
     } catch (error) {
-      console.error("Google Sign-In Error:", error);
+      console.error("❌ Google Sign-In Error:", error);
       alert(`Google Sign-In Failed: ${error.message}`);
     }
   };
@@ -31,13 +31,13 @@ const Login = () => {
   const checkUserAndRequestPhone = async (user) => {
     if (!user) return;
 
-    console.log("Checking user in Firestore...");
+    console.log("🔍 Checking user in Firestore...");
 
     const userDocRef = doc(db, "customers", user.email);
     const userDoc = await getDoc(userDocRef);
 
     if (!userDoc.exists()) {
-      console.log("New user detected. Creating Firestore entry...");
+      console.log("🆕 New user detected. Creating Firestore entry...");
       await setDoc(userDocRef, {
         firstName: user.displayName?.split(" ")[0] || "",
         lastName: user.displayName?.split(" ").slice(1).join(" ") || "",
@@ -49,28 +49,41 @@ const Login = () => {
         serviceEndDate: null,
       });
 
-      console.log("Firestore entry created. Asking for phone...");
-      setCurrentUser(user);
-      setShowPhoneInput(true);
-      setTimeout(() => setShowPhoneInput(true), 100); // ✅ Force state update
+      console.log("✅ Firestore entry created. Asking for phone...");
+      forcePhonePrompt(user);
     } else {
-      console.log("User already exists in Firestore.");
+      console.log("✅ User already exists in Firestore.");
       const existingPhone = userDoc.data().phone;
       if (!existingPhone) {
-        console.log("User exists but has no phone number. Asking for phone...");
-        setCurrentUser(user);
-        setShowPhoneInput(true);
-        setTimeout(() => setShowPhoneInput(true), 100); // ✅ Force state update
+        console.log("⚠️ User exists but has no phone number. Asking for phone...");
+        forcePhonePrompt(user);
       } else {
-        console.log("User already has a phone number. Navigating to /customer...");
+        console.log("✅ User already has a phone number. Navigating to /customer...");
         navigate("/customer", { replace: true });
       }
     }
   };
 
+  // 🚀 NEW: Force the phone input to show
+  const forcePhonePrompt = (user) => {
+    console.log("📞 FORCING PHONE PROMPT!");
+    setCurrentUser(user);
+    setShowPhoneInput(false); // Reset first
+    setTimeout(() => {
+      console.log("📞 Confirmed, showing phone input!");
+      setShowPhoneInput(true); // ✅ Forces UI update properly
+    }, 50);
+  };
+
+  useEffect(() => {
+    if (currentUser && !showPhoneInput) {
+      setShowPhoneInput(true);
+    }
+  }, [currentUser]);
+
   const handlePhoneSubmit = async () => {
     if (!phoneNumber.trim()) {
-      alert("Please enter your phone number.");
+      alert("⚠️ Please enter your phone number.");
       return;
     }
 
@@ -78,10 +91,10 @@ const Login = () => {
       const userDocRef = doc(db, "customers", currentUser.email);
       await updateDoc(userDocRef, { phone: phoneNumber });
 
-      console.log("Phone number saved:", phoneNumber);
+      console.log("✅ Phone number saved:", phoneNumber);
       navigate("/customer", { replace: true });
     } catch (error) {
-      console.error("Error saving phone number:", error);
+      console.error("❌ Error saving phone number:", error);
       alert("Error saving phone number. Please try again.");
     }
   };

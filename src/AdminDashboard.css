@@ -1,0 +1,111 @@
+/* 🌟 Admin Dashboard Styles - Clean & Professional */
+
+.admin-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #ffffff;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+  }
+  
+  .admin-container h2 {
+    text-align: center;
+    font-size: 28px;
+    color: #004AAD; /* Spectrum-inspired primary color */
+    margin-bottom: 20px;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+  }
+  
+  table, th, td {
+    border: 1px solid #dddddd;
+  }
+  
+  th, td {
+    padding: 12px;
+    text-align: center;
+  }
+  
+  th {
+    background-color: #004AAD; /* Spectrum blue */
+    color: white;
+  }
+  
+  td {
+    color: #333;
+    font-size: 16px;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+  
+  tr:hover {
+    background-color: #e3e3e3;
+  }
+  
+  /* 🔘 Buttons */
+  button {
+    padding: 8px 12px;
+    font-size: 14px;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    opacity: 0.85;
+  }
+  
+  /* ✅ Activate Button */
+  button.activate {
+    background-color: #28a745;
+  }
+  
+  /* ❌ End Service Button */
+  button.end-service {
+    background-color: #dc3545;
+  }
+  
+  /* 📅 Date Input */
+  input[type="date"] {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    text-align: center;
+  }
+  /* 🎨 Status Colors */
+.status {
+    font-weight: bold;
+    padding: 6px 12px;
+    border-radius: 5px;
+    display: inline-block;
+    text-transform: capitalize;
+  }
+  
+  /* 🟢 Active - Green */
+  .status.active {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  /* 🟡 Requested Activation - Yellow */
+  .status.requested {
+    background-color: #ffc107;
+    color: #333;
+  }
+  
+  /* 🔴 No Service - Gray */
+  .status.inactive {
+    background-color: #6c757d;
+    color: white;
+  }
+  

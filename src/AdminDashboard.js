@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { db } from "./firebase";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
+import "./AdminDashboard.css"; // Import the updated styles
 
 const AdminDashboard = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDates, setSelectedDates] = useState({}); // Store selected dates for each customer
+  const [selectedDates, setSelectedDates] = useState({});
 
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -15,7 +16,13 @@ const AdminDashboard = () => {
           id: doc.id,
           ...doc.data(),
         }));
-        setCustomers(customerList);
+
+        // ✅ Remove "example@gmail.com" from list
+        const filteredCustomers = customerList.filter(
+          (customer) => customer.email !== "example@gmail.com"
+        );
+
+        setCustomers(filteredCustomers);
       } catch (error) {
         console.error("Error fetching customers:", error);
       }
@@ -25,43 +32,43 @@ const AdminDashboard = () => {
     fetchCustomers();
   }, []);
 
-  // ✅ Handle Activation with Custom Dates
   const handleActivate = async (id) => {
     try {
       const { startDate, endDate } = selectedDates[id] || {};
-  
+
       if (!startDate || !endDate) {
         alert("Please select valid start and end dates.");
         return;
       }
-  
-      // ✅ Convert selected dates to MM/DD/YYYY format before saving
+
       const formatDate = (dateString) => {
         if (!dateString) return "N/A";
         const dateParts = dateString.split("-");
         if (dateParts.length === 3) {
-          return `${dateParts[1]}/${dateParts[2]}/${dateParts[0]}`; // Convert YYYY-MM-DD to MM/DD/YYYY
+          return `${dateParts[1]}/${dateParts[2]}/${dateParts[0]}`;
         }
-        return dateString; // If already formatted, return as is
+        return dateString;
       };
-      
-  
+
       const formattedStartDate = formatDate(startDate);
       const formattedEndDate = formatDate(endDate);
-  
-      // ✅ Update Firestore with formatted dates
+
       const customerRef = doc(db, "customers", id);
       await updateDoc(customerRef, {
         status: "Active",
         serviceStartDate: formattedStartDate,
         serviceEndDate: formattedEndDate,
       });
-  
-      // ✅ Update UI immediately
+
       setCustomers((prevCustomers) =>
         prevCustomers.map((customer) =>
           customer.id === id
-            ? { ...customer, status: "Active", serviceStartDate: formattedStartDate, serviceEndDate: formattedEndDate }
+            ? {
+                ...customer,
+                status: "Active",
+                serviceStartDate: formattedStartDate,
+                serviceEndDate: formattedEndDate,
+              }
             : customer
         )
       );
@@ -69,9 +76,7 @@ const AdminDashboard = () => {
       console.error("Error updating customer status:", error);
     }
   };
-  
 
-  // ✅ Handle Ending Service
   const handleEndService = async (id) => {
     try {
       const customerRef = doc(db, "customers", id);
@@ -96,12 +101,12 @@ const AdminDashboard = () => {
   if (loading) return <p>Loading customer data...</p>;
 
   return (
-    <div>
+    <div className="admin-container">
       <h2>Admin Dashboard</h2>
       {customers.length === 0 ? (
         <p>No customers found.</p>
       ) : (
-        <table border="1">
+        <table>
           <thead>
             <tr>
               <th>Name</th>
@@ -119,7 +124,17 @@ const AdminDashboard = () => {
                 <td>{customer.firstName} {customer.lastName}</td>
                 <td>{customer.email}</td>
                 <td>{customer.phone || "Not provided"}</td>
-                <td>{customer.status}</td>
+                <td>
+                  <span className={`status ${
+                    customer.status === "Active"
+                      ? "active"
+                      : customer.status === "Requested Activation"
+                      ? "requested"
+                      : "inactive"
+                  }`}>
+                    {customer.status}
+                  </span>
+                </td>
                 <td>
                   {customer.status !== "Active" ? (
                     <input
@@ -158,9 +173,9 @@ const AdminDashboard = () => {
                 </td>
                 <td>
                   {customer.status !== "Active" ? (
-                    <button onClick={() => handleActivate(customer.id)}>Mark as Active</button>
+                    <button className="activate" onClick={() => handleActivate(customer.id)}>Mark as Active</button>
                   ) : (
-                    <button onClick={() => handleEndService(customer.id)}>End Service</button>
+                    <button className="end-service" onClick={() => handleEndService(customer.id)}>End Service</button>
                   )}
                 </td>
               </tr>

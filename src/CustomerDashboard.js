@@ -7,6 +7,8 @@ const CustomerDashboard = () => {
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [requestSent, setRequestSent] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [showPhoneInput, setShowPhoneInput] = useState(false);
 
   useEffect(() => {
     const fetchCustomer = async () => {
@@ -38,19 +40,38 @@ const CustomerDashboard = () => {
 
   const handleRequestService = async () => {
     if (!customer) return;
-  
+
     try {
       const customerRef = doc(db, "customers", customer.id);
       await updateDoc(customerRef, {
         status: "Requested Activation",
       });
+
       setRequestSent(true);
-      alert("Request sent! Admin will review your request.");
+      setShowPhoneInput(true); // ✅ Only show phone input after requesting activation
     } catch (error) {
       console.error("Error sending service request:", error);
     }
   };
-  
+
+  const handlePhoneSubmit = async () => {
+    if (!phoneNumber.trim()) {
+      alert("Please enter a valid phone number.");
+      return;
+    }
+
+    try {
+      const customerRef = doc(db, "customers", customer.id);
+      await updateDoc(customerRef, { phone: phoneNumber });
+
+      console.log("✅ Phone number saved:", phoneNumber);
+      setCustomer((prev) => ({ ...prev, phone: phoneNumber }));
+      setShowPhoneInput(false); // Hide input after saving
+    } catch (error) {
+      console.error("❌ Error saving phone number:", error);
+      alert("Error saving phone number. Please try again.");
+    }
+  };
 
   if (loading) return <p className="loading">Loading account details...</p>;
 
@@ -78,9 +99,23 @@ const CustomerDashboard = () => {
                 Request Service Activation
               </button>
             ) : (
-              <p className="request-sent-message">Request Sent! Waiting for Admin Approval.</p>
+              <p className="request-sent-message">Request Sent! Waiting for Admin To Reach Out!</p>
             )}
           </>
+        )}
+
+        {/* Phone Input - Only Show After Requesting Service */}
+        {showPhoneInput && (
+          <div className="phone-input-container">
+            <p className="phone-text">Please enter your phone number so an admin can reach out to you.</p>
+            <input
+              type="tel"
+              placeholder="Enter phone number"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+            />
+            <button onClick={handlePhoneSubmit}>Submit</button>
+          </div>
         )}
       </div>
     </div>
