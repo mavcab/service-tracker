@@ -1,27 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { db } from "./firebase";
-import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
-import "./AdminDashboard.css"; // Import the updated styles
+import { collection, getDocs, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDates, setSelectedDates] = useState({});
+  const [filterStatus, setFilterStatus] = useState("All");
 
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "customers"));
-        const customerList = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
+        const customerList = querySnapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data(),
         }));
 
-        // ✅ Remove "example@gmail.com" from list
+        // Exclude any placeholder if needed
         const filteredCustomers = customerList.filter(
           (customer) => customer.email !== "example@gmail.com"
         );
-
         setCustomers(filteredCustomers);
       } catch (error) {
         console.error("Error fetching customers:", error);
@@ -32,48 +32,45 @@ const AdminDashboard = () => {
     fetchCustomers();
   }, []);
 
+  // Filter customers based on filterStatus state.
+  const filteredCustomers = customers.filter((customer) => {
+    if (filterStatus === "All") return true;
+    return customer.status === filterStatus;
+  });
+
   const handleActivate = async (id) => {
+    const { startDate, endDate } = selectedDates[id] || {};
+    if (!startDate || !endDate) {
+      alert("Please select valid dates.");
+      return;
+    }
+
+    const formatDate = (dateString) => {
+      const [yyyy, mm, dd] = dateString.split("-");
+      return `${mm}/${dd}/${yyyy}`;
+    };
+
     try {
-      const { startDate, endDate } = selectedDates[id] || {};
-
-      if (!startDate || !endDate) {
-        alert("Please select valid start and end dates.");
-        return;
-      }
-
-      const formatDate = (dateString) => {
-        if (!dateString) return "N/A";
-        const dateParts = dateString.split("-");
-        if (dateParts.length === 3) {
-          return `${dateParts[1]}/${dateParts[2]}/${dateParts[0]}`;
-        }
-        return dateString;
-      };
-
-      const formattedStartDate = formatDate(startDate);
-      const formattedEndDate = formatDate(endDate);
-
       const customerRef = doc(db, "customers", id);
       await updateDoc(customerRef, {
         status: "Active",
-        serviceStartDate: formattedStartDate,
-        serviceEndDate: formattedEndDate,
+        serviceStartDate: formatDate(startDate),
+        serviceEndDate: formatDate(endDate),
       });
-
       setCustomers((prevCustomers) =>
-        prevCustomers.map((customer) =>
-          customer.id === id
+        prevCustomers.map((c) =>
+          c.id === id
             ? {
-                ...customer,
+                ...c,
                 status: "Active",
-                serviceStartDate: formattedStartDate,
-                serviceEndDate: formattedEndDate,
+                serviceStartDate: formatDate(startDate),
+                serviceEndDate: formatDate(endDate),
               }
-            : customer
+            : c
         )
       );
     } catch (error) {
-      console.error("Error updating customer status:", error);
+      console.error("Error activating service:", error);
     }
   };
 
@@ -85,16 +82,25 @@ const AdminDashboard = () => {
         serviceStartDate: null,
         serviceEndDate: null,
       });
-
       setCustomers((prevCustomers) =>
-        prevCustomers.map((customer) =>
-          customer.id === id
-            ? { ...customer, status: "No service", serviceStartDate: null, serviceEndDate: null }
-            : customer
+        prevCustomers.map((c) =>
+          c.id === id
+            ? { ...c, status: "No service", serviceStartDate: null, serviceEndDate: null }
+            : c
         )
       );
     } catch (error) {
       console.error("Error ending service:", error);
+    }
+  };
+
+  const handleDeleteCustomer = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this customer?")) return;
+    try {
+      await deleteDoc(doc(db, "customers", id));
+      setCustomers((prev) => prev.filter((c) => c.id !== id));
+    } catch (error) {
+      console.error("Error deleting customer:", error);
     }
   };
 
@@ -103,40 +109,67 @@ const AdminDashboard = () => {
   return (
     <div className="admin-container">
       <h2>Admin Dashboard</h2>
-      {customers.length === 0 ? (
-        <p>No customers found.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Status</th>
-              <th>Service Start</th>
-              <th>Service End</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map((customer) => (
-              <tr key={customer.id}>
-                <td>{customer.firstName} {customer.lastName}</td>
-                <td>{customer.email}</td>
-                <td>{customer.phone || "Not provided"}</td>
-                <td>
-                  <span className={`status ${
+      <div className="filter-container">
+        <label htmlFor="filter">Filter by Status: </label>
+        <select
+          id="filter"
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
+          <option value="All">All</option>
+          <option value="Pending Activation">Pending Activation</option>
+          <option value="Active">Active</option>
+          <option value="No service">No service</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>MAC IP</th>
+            <th>Device Key</th>
+            <th>Status</th>
+            <th>Service Start</th>
+            <th>Service End</th>
+            <th>Actions</th>
+            <th></th> {/* Delete column header left blank */}
+          </tr>
+        </thead>
+        <tbody>
+          {filteredCustomers.map((customer) => (
+            <tr key={customer.id}>
+              <td>{customer.firstName} {customer.lastName}</td>
+              <td>{customer.email}</td>
+              <td>{customer.phone || "Not provided"}</td>
+              <td>{customer.macAddress || "Not provided"}</td>
+              <td>{customer.deviceKey || "Not provided"}</td>
+              <td>
+                <span
+                  className={`status ${
                     customer.status === "Active"
                       ? "active"
-                      : customer.status === "Requested Activation"
-                      ? "requested"
+                      : customer.status === "Pending Activation"
+                      ? "pending"
                       : "inactive"
-                  }`}>
-                    {customer.status}
-                  </span>
-                </td>
-                <td>
-                  {customer.status !== "Active" ? (
+                  }`}
+                >
+                  {customer.status}
+                </span>
+              </td>
+              <td>{customer.serviceStartDate || "N/A"}</td>
+              <td>{customer.serviceEndDate || "N/A"}</td>
+              <td>
+                {customer.status === "No service" && (
+                  <>
+                    <button
+                      className="activate"
+                      onClick={() => handleActivate(customer.id)}
+                    >
+                      Mark as Active
+                    </button>
+                    <br />
                     <input
                       type="date"
                       onChange={(e) =>
@@ -149,12 +182,6 @@ const AdminDashboard = () => {
                         }))
                       }
                     />
-                  ) : (
-                    customer.serviceStartDate || "N/A"
-                  )}
-                </td>
-                <td>
-                  {customer.status !== "Active" ? (
                     <input
                       type="date"
                       onChange={(e) =>
@@ -167,22 +194,65 @@ const AdminDashboard = () => {
                         }))
                       }
                     />
-                  ) : (
-                    customer.serviceEndDate || "N/A"
-                  )}
-                </td>
-                <td>
-                  {customer.status !== "Active" ? (
-                    <button className="activate" onClick={() => handleActivate(customer.id)}>Mark as Active</button>
-                  ) : (
-                    <button className="end-service" onClick={() => handleEndService(customer.id)}>End Service</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+                  </>
+                )}
+                {customer.status === "Pending Activation" && (
+                  <>
+                    
+                    {/* Optionally allow admin to update dates */}
+                    <input
+                      type="date"
+                      onChange={(e) =>
+                        setSelectedDates((prev) => ({
+                          ...prev,
+                          [customer.id]: {
+                            ...prev[customer.id],
+                            startDate: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                    <input
+                      type="date"
+                      onChange={(e) =>
+                        setSelectedDates((prev) => ({
+                          ...prev,
+                          [customer.id]: {
+                            ...prev[customer.id],
+                            endDate: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                    <button
+                      className="activate"
+                      onClick={() => handleActivate(customer.id)}
+                    >
+                      Mark as Active
+                    </button>
+                  </>
+                )}
+                {customer.status === "Active" && (
+                  <button
+                    className="end-service"
+                    onClick={() => handleEndService(customer.id)}
+                  >
+                    End Service
+                  </button>
+                )}
+              </td>
+              <td>
+                <button
+                  className="delete"
+                  onClick={() => handleDeleteCustomer(customer.id)}
+                >
+                  🗑️
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };

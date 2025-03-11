@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ✅ Everyone can read all customers (public read access)
+    match /customers/{document=**} {
+      allow read: if true;
+      allow write, update, delete: if request.auth != null;
+    }
+
+    // ✅ Only admins can modify customer data
+    match /customers/{document=**} {
+      allow write, update, delete: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
+    }
+
+    // ✅ Allow authenticated users to read the admin list
+    match /admins/{email} {
+      allow read: if request.auth != null;
+    }
+  }
+}

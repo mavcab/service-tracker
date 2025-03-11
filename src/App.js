@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { auth, db } from "./firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import { PayPalScriptProvider } from "@paypal/react-paypal-js";
+
+import { auth, db } from "./firebase";
 import Home from "./Home";
 import Login from "./Login";
-import AdminLogin from "./AdminLogin"; // NEW: Admin login page
+import AdminLogin from "./AdminLogin";
 import CustomerDashboard from "./CustomerDashboard";
 import AdminDashboard from "./AdminDashboard";
 import AccessDenied from "./AccessDenied";
@@ -33,21 +35,30 @@ const App = () => {
   if (loading) return <p>Loading...</p>;
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={user ? <Navigate to="/customer" /> : <Login />} />
-        <Route path="/admin-login" element={<AdminLogin />} />
-        <Route path="/customer" element={user ? <CustomerDashboard /> : <Navigate to="/login" />} />
-        <Route path="/admin" element={user ? (isAdmin ? <AdminDashboard /> : <AccessDenied />) : <Navigate to="/admin-login" />} />
-        <Route path="/logout" element={<Logout />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
+    <PayPalScriptProvider
+      options={{
+        "client-id": "AX9pu4nBZjKWh2R1ue_hnjJId_U7tpBoSsC5NEwJJs1LJgxspcrxcxBDsWHKhuDk5OYUUa60yz6vUynP", // Sandbox ID
+        vault: true,
+        intent: "subscription",
+        disableFunding: "paylater",
+        currency: "USD"
+      }}
+    >
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={user ? <Navigate to="/customer" /> : <Login />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/customer" element={user ? <CustomerDashboard /> : <Navigate to="/login" />} />
+          <Route path="/admin" element={user ? (isAdmin ? <AdminDashboard /> : <AccessDenied />) : <Navigate to="/admin-login" />} />
+          <Route path="/logout" element={<Logout />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Router>
+    </PayPalScriptProvider>
   );
 };
 
-// Logout function (if you need to manually test login)
 const Logout = () => {
   useEffect(() => {
     signOut(auth);

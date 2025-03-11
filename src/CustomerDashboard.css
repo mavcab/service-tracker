@@ -1,93 +1,140 @@
-/* General Styling */
 .dashboard-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #f4f4f4;
+  background-color: #f4f7fb;
+  min-height: 100vh;
+  padding: 40px 20px;
+  font-family: Arial, sans-serif;
 }
 
 .dashboard-box {
   background: white;
-  padding: 25px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  text-align: center;
-  width: 90%;
-  max-width: 500px;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: 100%;
 }
 
-/* Status */
+.dashboard-box h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+/* Centered Status Line */
 .status {
   font-size: 18px;
-  margin-bottom: 10px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  text-align: center;
 }
 
 .status .active {
-  color: green;
-  font-weight: bold;
+  color: #28a745;
 }
 
 .status .inactive {
-  color: red;
-  font-weight: bold;
+  color: #dc3545;
 }
 
-/* Request Service Button */
-.request-service-btn {
-  background-color: #28a745;
-  color: white;
+.status .pending {
+  color: #f0ad4e;
+}
+
+.inactive-message {
+  text-align: center;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.locked-message {
+  text-align: center;
+  font-size: 16px;
+  color: #333;
+  margin-top: 20px;
   padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+/* Section Boxes for Steps */
+.section-box {
+  background-color: #f5faff;
+  border-left: 5px solid #007bff;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.section-box h4 {
+  font-size: 17px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.section-box input {
+  width: 90%;
+  padding: 10px;
+  margin: 6px auto 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+/* App Links */
+.app-links {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+
+.app-links li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.platform-logo {
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+}
+
+.instruction-toggle-btn {
+  background-color: #007bff;
+  color: #fff;
   border: none;
+  padding: 8px 14px;
   border-radius: 5px;
   cursor: pointer;
+  margin-top: 8px;
+}
+
+.instruction-toggle-btn:hover {
+  background-color: #0056b3;
+}
+
+.tv-instructions {
   margin-top: 10px;
-}
-
-.request-service-btn:hover {
-  background-color: #218838;
-}
-
-/* Request Sent Message */
-.request-sent-message {
-  color: #ff9800;
-  font-weight: bold;
-  margin-top: 10px;
-}
-
-/* Phone Input Section */
-.phone-input-container {
-  background: #e8f0fe;
-  padding: 15px;
-  margin-top: 20px;
-  border-radius: 5px;
+  background-color: #eef4fc;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 14px;
   text-align: left;
 }
 
-.phone-text {
-  font-size: 14px;
-  color: #333;
-  margin-bottom: 5px;
-}
-
-.phone-input-container input {
-  width: 100%;
+.success-message {
+  text-align: center;
   padding: 10px;
-  margin-top: 5px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.phone-input-container button {
-  background-color: #007bff;
-  color: white;
-  padding: 10px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-.phone-input-container button:hover {
-  background-color: #0056b3;
+  color: green;
+  font-weight: 600;
+  background-color: #e8ffe9;
+  border-radius: 6px;
+  margin-top: 15px;
+  border: 1px solid green;
 }

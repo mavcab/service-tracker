@@ -46,7 +46,7 @@ const Login = () => {
         phone: "", // Empty phone, will be filled later
         status: "No service",
         serviceStartDate: null,
-        serviceEndDate: null,
+        serviceEndDate: null
       });
 
       console.log("✅ Firestore entry created. Asking for phone...");
@@ -71,15 +71,16 @@ const Login = () => {
     setShowPhoneInput(false); // Reset first
     setTimeout(() => {
       console.log("📞 Confirmed, showing phone input!");
-      setShowPhoneInput(true); // ✅ Forces UI update properly
+      setShowPhoneInput(true); // Forces UI update properly
     }, 50);
   };
 
+  // Updated useEffect: include showPhoneInput as a dependency to fix ESLint warning
   useEffect(() => {
     if (currentUser && !showPhoneInput) {
       setShowPhoneInput(true);
     }
-  }, [currentUser]);
+  }, [currentUser, showPhoneInput]);
 
   const handlePhoneSubmit = async () => {
     if (!phoneNumber.trim()) {
