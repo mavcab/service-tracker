@@ -26,7 +26,7 @@ const CustomerDashboard = () => {
       if (!currentUser) return;
       
       try {
-        // Try to fetch an existing customer record
+        // Try to fetch an existing customer record from Firestore
         const q = query(
           collection(db, "customers"),
           where("email", "==", currentUser.email)
@@ -35,11 +35,17 @@ const CustomerDashboard = () => {
         if (!querySnapshot.empty) {
           const docData = querySnapshot.docs[0].data();
           setCustomer({ id: querySnapshot.docs[0].id, ...docData });
+          // Populate local states if they exist in Firestore
+          if (docData.phone) setPhoneNumber(docData.phone);
+          if (docData.macAddress) setMacAddress(docData.macAddress);
+          if (docData.deviceKey) setDeviceKey(docData.deviceKey);
         } else {
           // No record exists yet; create a temporary customer object
           setCustomer({
             id: currentUser.email, // using email as document ID
-            firstName: currentUser.displayName ? currentUser.displayName.split(" ")[0] : "Customer",
+            firstName: currentUser.displayName
+              ? currentUser.displayName.split(" ")[0]
+              : "Customer",
             email: currentUser.email,
             status: "No service"
           });
@@ -81,7 +87,7 @@ const CustomerDashboard = () => {
           macAddress,
           deviceKey,
           status: "Pending Activation",
-          subscriptionID, // store subscription ID for reference
+          subscriptionID // store subscription ID for reference
         },
         { merge: true }
       );
@@ -92,14 +98,14 @@ const CustomerDashboard = () => {
         macAddress,
         deviceKey,
         status: "Pending Activation",
-        subscriptionID,
+        subscriptionID
       }));
     } catch (error) {
       console.error("Error saving customer record:", error);
     }
   };
 
-  // Form is complete when MAC, Device Key, and a 10-digit phone number are provided.
+  // Check if all fields are complete (MAC, Device Key, and 10-digit phone)
   const isFormComplete =
     macAddress.trim() &&
     deviceKey.trim() &&
@@ -107,31 +113,69 @@ const CustomerDashboard = () => {
 
   if (loading) return <p className="loading">Loading account details...</p>;
 
-  // If customer record exists (status not "No service"), lock the form.
-  if (customer && customer.status !== "No service") {
+  // For display, treat any status that includes "Canceled" as "Canceled" in the UI.
+  const displayStatus =
+    customer && customer.status.includes("Canceled")
+      ? "Canceled"
+      : customer && customer.status;
+
+  // If customer exists and their status is Active or Pending Activation (i.e. they've already subscribed)
+  if (customer && customer.status !== "No service" && !customer.status.includes("Canceled")) {
     return (
       <div className="dashboard-container">
         <div className="dashboard-box">
           <h2>Welcome, {customer.firstName}!</h2>
           <p className="status">
-            Status:{" "}
-            <span
-              className={
-                customer.status === "Active"
-                  ? "active"
-                  : customer.status === "Pending Activation"
-                  ? "pending"
-                  : "inactive"
-              }
-            >
-              {customer.status}
-            </span>
+            Status: <span className={
+              customer.status === "Active"
+                ? "active"
+                : customer.status === "Pending Activation"
+                ? "pending"
+                : "inactive"
+            }>{displayStatus || "No service"}</span>
           </p>
           <div className="locked-message">
             <p>
               Your subscription is active. Please allow us 1-2 business days to activate your service.
             </p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If the customer's status includes "Canceled", show a reactivation view.
+  if (customer && customer.status.includes("Canceled")) {
+    return (
+      <div className="dashboard-container">
+        <div className="dashboard-box">
+          <h2>Welcome, {customer.firstName}!</h2>
+          <p className="status">
+            Status: <span className="canceled status">{displayStatus}</span>
+          </p>
+          <div className="locked-message">
+            <p>
+              You canceled your PayPal subscription. Please reactivate your subscription to resume service.
+            </p>
+          </div>
+          {isFormComplete && (
+            <div className="section-box paypal-container">
+              <h4>💳 Reactivate via PayPal</h4>
+              <PayPalButtons
+                style={{ layout: "vertical", label: "subscribe", tagline: false }}
+                createSubscription={(data, actions) =>
+                  actions.subscription.create({
+                    plan_id: "P-58V95958EU803901VM7HV4EA" // Replace with your actual plan ID
+                  })
+                }
+                onApprove={(data, actions) => {
+                  console.log("Reactivation completed with ID:", data.subscriptionID);
+                  handleSubscriptionSuccess(data.subscriptionID);
+                }}
+                onError={(err) => console.error("PayPal Subscription Error:", err)}
+              />
+            </div>
+          )}
         </div>
       </div>
     );
@@ -145,7 +189,7 @@ const CustomerDashboard = () => {
         <p className="status">
           Status:{" "}
           <span className={customer?.status === "Active" ? "active" : "inactive"}>
-            {customer?.status || "No service"}
+            {displayStatus || "No service"}
           </span>
         </p>
         <p className="inactive-message">Your service is currently not active.</p>
@@ -230,7 +274,7 @@ const CustomerDashboard = () => {
 
         {/* Step 4: Subscribe via PayPal */}
         {isFormComplete && (
-          <div className="section-box">
+          <div className="section-box paypal-container">
             <h4>💳 Step 4: Subscribe via PayPal</h4>
             <PayPalButtons
               style={{ layout: "vertical", label: "subscribe", tagline: false }}

@@ -43,6 +43,10 @@
   color: #f0ad4e;
 }
 
+.status.canceled {
+  color: #d9534f;
+}
+
 .inactive-message {
   text-align: center;
   color: #555;
@@ -137,4 +141,9 @@
   border-radius: 6px;
   margin-top: 15px;
   border: 1px solid green;
+}
+
+/* Extra spacing for PayPal button container */
+.paypal-container {
+  margin-top: 20px;
 }

@@ -56,6 +56,31 @@ table th {
   color: #f0ad4e;
 }
 
+.status.canceled {
+  color: #d9534f;
+}
+
+.notification {
+  font-size: 14px;
+  color: #d9534f;
+  margin-top: 4px;
+}
+
+.process-btn {
+  margin-top: 4px;
+  padding: 4px 8px;
+  background-color: #f0ad4e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.process-btn:hover {
+  background-color: #ec971f;
+}
+
 button {
   padding: 6px 10px;
   margin: 2px;
@@ -97,4 +122,9 @@ input[type="date"] {
   margin: 4px;
   padding: 4px;
   font-size: 14px;
+}
+
+/* Extra spacing for PayPal button container */
+.paypal-container {
+  margin-top: 20px;
 }

@@ -17,7 +17,6 @@ const AdminDashboard = () => {
           id: docSnap.id,
           ...docSnap.data(),
         }));
-
         // Exclude any placeholder if needed
         const filteredCustomers = customerList.filter(
           (customer) => customer.email !== "example@gmail.com"
@@ -32,11 +31,19 @@ const AdminDashboard = () => {
     fetchCustomers();
   }, []);
 
-  // Filter customers based on filterStatus state.
+  // Filter customers based on filterStatus.
   const filteredCustomers = customers.filter((customer) => {
     if (filterStatus === "All") return true;
     return customer.status === filterStatus;
   });
+
+  // Notification message for canceled status.
+  const getNotificationMessage = (status) => {
+    if (status === "Canceled") {
+      return "Process cancellation of service.";
+    }
+    return "";
+  };
 
   const handleActivate = async (id) => {
     const { startDate, endDate } = selectedDates[id] || {};
@@ -44,12 +51,10 @@ const AdminDashboard = () => {
       alert("Please select valid dates.");
       return;
     }
-
     const formatDate = (dateString) => {
       const [yyyy, mm, dd] = dateString.split("-");
       return `${mm}/${dd}/${yyyy}`;
     };
-
     try {
       const customerRef = doc(db, "customers", id);
       await updateDoc(customerRef, {
@@ -94,6 +99,24 @@ const AdminDashboard = () => {
     }
   };
 
+  // New: Handler for when an admin processes a cancellation in real life.
+  const handleProcessCancellation = async (id) => {
+    if (!window.confirm("Mark this cancellation as processed?")) return;
+    try {
+      const customerRef = doc(db, "customers", id);
+      await updateDoc(customerRef, {
+        status: "Canceled (Processed)"
+      });
+      setCustomers((prevCustomers) =>
+        prevCustomers.map((c) =>
+          c.id === id ? { ...c, status: "Canceled (Processed)" } : c
+        )
+      );
+    } catch (error) {
+      console.error("Error processing cancellation:", error);
+    }
+  };
+
   const handleDeleteCustomer = async (id) => {
     if (!window.confirm("Are you sure you want to delete this customer?")) return;
     try {
@@ -120,6 +143,8 @@ const AdminDashboard = () => {
           <option value="Pending Activation">Pending Activation</option>
           <option value="Active">Active</option>
           <option value="No service">No service</option>
+          <option value="Canceled">Canceled</option>
+          <option value="Canceled (Processed)">Canceled (Processed)</option>
         </select>
       </div>
       <table>
@@ -134,7 +159,8 @@ const AdminDashboard = () => {
             <th>Service Start</th>
             <th>Service End</th>
             <th>Actions</th>
-            <th></th> {/* Delete column header left blank */}
+            <th>Notification</th>
+            <th></th> {/* Delete column */}
           </tr>
         </thead>
         <tbody>
@@ -152,6 +178,8 @@ const AdminDashboard = () => {
                       ? "active"
                       : customer.status === "Pending Activation"
                       ? "pending"
+                      : customer.status.includes("Canceled")
+                      ? "canceled"
                       : "inactive"
                   }`}
                 >
@@ -198,8 +226,7 @@ const AdminDashboard = () => {
                 )}
                 {customer.status === "Pending Activation" && (
                   <>
-                    
-                    {/* Optionally allow admin to update dates */}
+                    <p>Payment Received</p>
                     <input
                       type="date"
                       onChange={(e) =>
@@ -239,6 +266,23 @@ const AdminDashboard = () => {
                   >
                     End Service
                   </button>
+                )}
+              </td>
+              <td>
+                {/* Show notification only if status is exactly "Canceled" */}
+                {customer.status === "Canceled" ? (
+                  <div className="notification">
+                    {getNotificationMessage(customer.status)}
+                    <br />
+                    <button
+                      className="process-btn"
+                      onClick={() => handleProcessCancellation(customer.id)}
+                    >
+                      Mark as Processed
+                    </button>
+                  </div>
+                ) : (
+                  ""
                 )}
               </td>
               <td>
