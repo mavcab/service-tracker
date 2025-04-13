@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { db } from "./firebase";
-import { collection, getDocs, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, updateDoc, deleteDoc, doc, query, where, orderBy } from "firebase/firestore";
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
@@ -12,16 +12,18 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "customers"));
+        // Optionally use a query to exclude placeholder emails on the server side.
+        const q = query(
+          collection(db, "customers"),
+          where("email", "!=", "example@gmail.com"),
+          orderBy("email")
+        );
+        const querySnapshot = await getDocs(q);
         const customerList = querySnapshot.docs.map((docSnap) => ({
           id: docSnap.id,
           ...docSnap.data(),
         }));
-        // Exclude any placeholder if needed
-        const filteredCustomers = customerList.filter(
-          (customer) => customer.email !== "example@gmail.com"
-        );
-        setCustomers(filteredCustomers);
+        setCustomers(customerList);
       } catch (error) {
         console.error("Error fetching customers:", error);
       }
@@ -99,7 +101,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // New: Handler for when an admin processes a cancellation in real life.
   const handleProcessCancellation = async (id) => {
     if (!window.confirm("Mark this cancellation as processed?")) return;
     try {
@@ -183,14 +184,17 @@ const AdminDashboard = () => {
                       : "inactive"
                   }`}
                 >
-                  {customer.status}
+                  {customer.status.includes("Canceled") ? "Canceled" : customer.status}
                 </span>
               </td>
               <td>{customer.serviceStartDate || "N/A"}</td>
               <td>{customer.serviceEndDate || "N/A"}</td>
               <td>
-                {customer.status === "No service" && (
+                {(customer.status === "No service" ||
+                  customer.status === "Pending Activation" ||
+                  customer.status.includes("Canceled")) && (
                   <>
+                    {customer.status === "Pending Activation" }
                     <button
                       className="activate"
                       onClick={() => handleActivate(customer.id)}
@@ -222,41 +226,6 @@ const AdminDashboard = () => {
                         }))
                       }
                     />
-                  </>
-                )}
-                {customer.status === "Pending Activation" && (
-                  <>
-                    <p>Payment Received</p>
-                    <input
-                      type="date"
-                      onChange={(e) =>
-                        setSelectedDates((prev) => ({
-                          ...prev,
-                          [customer.id]: {
-                            ...prev[customer.id],
-                            startDate: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <input
-                      type="date"
-                      onChange={(e) =>
-                        setSelectedDates((prev) => ({
-                          ...prev,
-                          [customer.id]: {
-                            ...prev[customer.id],
-                            endDate: e.target.value,
-                          },
-                        }))
-                      }
-                    />
-                    <button
-                      className="activate"
-                      onClick={() => handleActivate(customer.id)}
-                    >
-                      Mark as Active
-                    </button>
                   </>
                 )}
                 {customer.status === "Active" && (
@@ -270,7 +239,7 @@ const AdminDashboard = () => {
               </td>
               <td>
                 {/* Show notification only if status is exactly "Canceled" */}
-                {customer.status === "Canceled" ? (
+                {customer.status === "Canceled" && (
                   <div className="notification">
                     {getNotificationMessage(customer.status)}
                     <br />
@@ -281,8 +250,6 @@ const AdminDashboard = () => {
                       Mark as Processed
                     </button>
                   </div>
-                ) : (
-                  ""
                 )}
               </td>
               <td>

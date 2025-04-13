@@ -26,21 +26,20 @@ const CustomerDashboard = () => {
       if (!currentUser) return;
       
       try {
-        // Try to fetch an existing customer record from Firestore
-        const q = query(
-          collection(db, "customers"),
-          where("email", "==", currentUser.email)
-        );
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-          const docData = querySnapshot.docs[0].data();
-          setCustomer({ id: querySnapshot.docs[0].id, ...docData });
-          // Populate local states if they exist in Firestore
+        // Use the email as the document ID for a direct read.
+        const docRef = doc(db, "customers", currentUser.email);
+        const docSnap = await getDocs(query(collection(db, "customers"), where("email", "==", currentUser.email)));
+        // If a document exists (based on our query) then use it. Otherwise, create a temporary object.
+        if (!docSnap.empty) {
+          // Using the first matching document
+          const docData = docSnap.docs[0].data();
+          setCustomer({ id: docSnap.docs[0].id, ...docData });
+          // Populate local state if available
           if (docData.phone) setPhoneNumber(docData.phone);
           if (docData.macAddress) setMacAddress(docData.macAddress);
           if (docData.deviceKey) setDeviceKey(docData.deviceKey);
         } else {
-          // No record exists yet; create a temporary customer object
+          // No record exists; create a temporary customer object
           setCustomer({
             id: currentUser.email, // using email as document ID
             firstName: currentUser.displayName
@@ -53,7 +52,6 @@ const CustomerDashboard = () => {
       } catch (error) {
         console.error("Error fetching customer:", error);
       }
-      
       setLoading(false);
     };
 
@@ -105,7 +103,7 @@ const CustomerDashboard = () => {
     }
   };
 
-  // Check if all fields are complete (MAC, Device Key, and 10-digit phone)
+  // Check if the form is complete (MAC, Device Key, and 10-digit phone)
   const isFormComplete =
     macAddress.trim() &&
     deviceKey.trim() &&
@@ -119,25 +117,37 @@ const CustomerDashboard = () => {
       ? "Canceled"
       : customer && customer.status;
 
-  // If customer exists and their status is Active or Pending Activation (i.e. they've already subscribed)
+  // If customer exists and their status is Active or Pending Activation (i.e. they've already subscribed),
+  // show a locked view with custom messages.
   if (customer && customer.status !== "No service" && !customer.status.includes("Canceled")) {
     return (
       <div className="dashboard-container">
         <div className="dashboard-box">
           <h2>Welcome, {customer.firstName}!</h2>
           <p className="status">
-            Status: <span className={
-              customer.status === "Active"
-                ? "active"
-                : customer.status === "Pending Activation"
-                ? "pending"
-                : "inactive"
-            }>{displayStatus || "No service"}</span>
+            Status:{" "}
+            <span
+              className={
+                customer.status === "Active"
+                  ? "active"
+                  : customer.status === "Pending Activation"
+                  ? "pending"
+                  : "inactive"
+              }
+            >
+              {displayStatus || "No service"}
+            </span>
           </p>
           <div className="locked-message">
-            <p>
-              Your subscription is active. Please allow us 1-2 business days to activate your service.
-            </p>
+            {customer.status === "Active" ? (
+              <p>
+                StreamSync has been activated on your device! If you have any questions or concerns, please reach out to our team at <a href="mailto:streamsyncUS@gmail.com">streamsyncUS@gmail.com</a>.
+              </p>
+            ) : customer.status === "Pending Activation" ? (
+              <p>
+                Your payment has been received and your subscription is pending activation. Please allow 1-2 business days for activation. If you have any questions, please contact our team at <a href="mailto:streamsyncUS@gmail.com">streamsyncUS@gmail.com</a>.
+              </p>
+            ) : null}
           </div>
         </div>
       </div>
@@ -155,7 +165,7 @@ const CustomerDashboard = () => {
           </p>
           <div className="locked-message">
             <p>
-              You canceled your PayPal subscription. Please reactivate your subscription to resume service.
+              You canceled your PayPal subscription. Please reactivate your subscription to resume service. If you have questions, email <a href="mailto:streamsyncUS@gmail.com">streamsyncUS@gmail.com</a>.
             </p>
           </div>
           {isFormComplete && (

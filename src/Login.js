@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db, provider, signInWithPopup, signOut } from "./firebase";
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
@@ -10,16 +10,17 @@ const Login = () => {
   const [showPhoneInput, setShowPhoneInput] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
+  // Log state updates (for debugging)
   useEffect(() => {
     console.log("📢 State Updated: showPhoneInput is now", showPhoneInput);
   }, [showPhoneInput]);
 
   const handleGoogleSignIn = async () => {
     try {
-      await signOut(auth); // Ensure fresh login
+      // Sign out any current user to force a fresh Google Sign-In
+      await signOut(auth);
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-
       console.log("✅ Google Sign-In Success:", user.email);
       checkUserAndRequestPhone(user);
     } catch (error) {
@@ -30,12 +31,10 @@ const Login = () => {
 
   const checkUserAndRequestPhone = async (user) => {
     if (!user) return;
-
     console.log("🔍 Checking user in Firestore...");
-
+    // Use email as document ID to perform a direct lookup
     const userDocRef = doc(db, "customers", user.email);
     const userDoc = await getDoc(userDocRef);
-
     if (!userDoc.exists()) {
       console.log("🆕 New user detected. Creating Firestore entry...");
       await setDoc(userDocRef, {
@@ -43,12 +42,11 @@ const Login = () => {
         lastName: user.displayName?.split(" ").slice(1).join(" ") || "",
         email: user.email,
         userId: user.uid,
-        phone: "", // Empty phone, will be filled later
+        phone: "", // Empty phone, to be filled later
         status: "No service",
         serviceStartDate: null,
         serviceEndDate: null
       });
-
       console.log("✅ Firestore entry created. Asking for phone...");
       forcePhonePrompt(user);
     } else {
@@ -64,34 +62,35 @@ const Login = () => {
     }
   };
 
-  // 🚀 NEW: Force the phone input to show
+  // Force the phone prompt to show
   const forcePhonePrompt = (user) => {
-    console.log("📞 FORCING PHONE PROMPT!");
+    console.log("📞 Forcing phone prompt.");
     setCurrentUser(user);
-    setShowPhoneInput(false); // Reset first
-    setTimeout(() => {
-      console.log("📞 Confirmed, showing phone input!");
-      setShowPhoneInput(true); // Forces UI update properly
-    }, 50);
+    setShowPhoneInput(true);
   };
 
-  // Updated useEffect: include showPhoneInput as a dependency to fix ESLint warning
-  useEffect(() => {
-    if (currentUser && !showPhoneInput) {
-      setShowPhoneInput(true);
+  // Format phone number as (XXX) XXX-XXXX
+  const handlePhoneChange = (e) => {
+    const input = e.target.value.replace(/\D/g, "");
+    const match = input.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
+    let formatted = "";
+    if (match) {
+      const [, area, middle, last] = match;
+      if (last) formatted = `(${area}) ${middle}-${last}`;
+      else if (middle) formatted = `(${area}) ${middle}`;
+      else if (area) formatted = `(${area}`;
     }
-  }, [currentUser, showPhoneInput]);
+    setPhoneNumber(formatted);
+  };
 
   const handlePhoneSubmit = async () => {
     if (!phoneNumber.trim()) {
       alert("⚠️ Please enter your phone number.");
       return;
     }
-
     try {
       const userDocRef = doc(db, "customers", currentUser.email);
       await updateDoc(userDocRef, { phone: phoneNumber });
-
       console.log("✅ Phone number saved:", phoneNumber);
       navigate("/customer", { replace: true });
     } catch (error) {
@@ -105,7 +104,6 @@ const Login = () => {
       <div className="login-box">
         <h1>CableSync</h1>
         <p>Cable service made easy and affordable.</p>
-
         {showPhoneInput ? (
           <div className="phone-input">
             <p>Please enter your phone number:</p>
@@ -113,7 +111,7 @@ const Login = () => {
               type="tel"
               placeholder="Enter phone number"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              onChange={handlePhoneChange}
             />
             <button onClick={handlePhoneSubmit}>Submit</button>
           </div>

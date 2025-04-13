@@ -10,7 +10,6 @@ import Login from "./Login";
 import AdminLogin from "./AdminLogin";
 import CustomerDashboard from "./CustomerDashboard";
 import AdminDashboard from "./AdminDashboard";
-import AccessDenied from "./AccessDenied";
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -20,15 +19,12 @@ const App = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-
       if (currentUser) {
         const adminDoc = await getDoc(doc(db, "admins", currentUser.email));
         setIsAdmin(adminDoc.exists());
       }
-
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -50,7 +46,7 @@ const App = () => {
           <Route path="/login" element={user ? <Navigate to="/customer" /> : <Login />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/customer" element={user ? <CustomerDashboard /> : <Navigate to="/login" />} />
-          <Route path="/admin" element={user ? (isAdmin ? <AdminDashboard /> : <AccessDenied />) : <Navigate to="/admin-login" />} />
+          <Route path="/admin" element={user ? (isAdmin ? <AdminDashboard /> : <Navigate to="/admin-login" />) : <Navigate to="/admin-login" />} />
           <Route path="/logout" element={<Logout />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
