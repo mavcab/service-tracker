@@ -52,16 +52,13 @@ const AdminDashboard = () => {
       const email = customer.email.toLowerCase();
       const term = searchTerm.toLowerCase();
       return name.includes(term) || email.includes(term);
-    } else {
+    } else {    
       return false;
-      } catch (error) {
-        console.error("Error fetching customers:", error);
-      }
-      setLoading(false);
-    };
+    }
+  });
 
-    fetchCustomers();
-  }, [filterStatus, searchTerm]);
+  useEffect(() => {}, [filterStatus, searchTerm]);
+
 
   // Sorting function
   const sortedCustomers = () => {

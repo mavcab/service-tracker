@@ -28,7 +28,6 @@ const CustomerDashboard = () => {
       
       try {
         // Use the email as the document ID for a direct read.
-        const docRef = doc(db, "customers", currentUser.email);
         const docSnap = await getDocs(query(collection(db, "customers"), where("email", "==", currentUser.email)));
         // If a document exists (based on our query) then use it. Otherwise, create a temporary object.
         if (!docSnap.empty) {
