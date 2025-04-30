@@ -12,13 +12,14 @@ import { PayPalButtons } from "@paypal/react-paypal-js";
 import "./CustomerDashboard.css";
 
 const CustomerDashboard = () => {
-  const [customer, setCustomer] = useState(null); // Customer record or temporary auth info
+  const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [macAddress, setMacAddress] = useState("");
-  const [deviceKey, setDeviceKey] = useState("");
+  const [devices, setDevices] = useState([]);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+
+  const newDevice = () => ({ macAddress: "", deviceKey: "" });
 
   useEffect(() => {
     const fetchCustomer = async () => {
@@ -34,10 +35,11 @@ const CustomerDashboard = () => {
           // Using the first matching document
           const docData = docSnap.docs[0].data();
           setCustomer({ id: docSnap.docs[0].id, ...docData });
-          // Populate local state if available
           if (docData.phone) setPhoneNumber(docData.phone);
-          if (docData.macAddress) setMacAddress(docData.macAddress);
-          if (docData.deviceKey) setDeviceKey(docData.deviceKey);
+          //If the user has a device saved populate it.
+          if (docData.devices && Array.isArray(docData.devices)) {
+            setDevices(docData.devices);
+          }
         } else {
           // No record exists; create a temporary customer object
           setCustomer({
@@ -81,9 +83,8 @@ const CustomerDashboard = () => {
         {
           firstName: customer.firstName,
           email: customer.email,
-          phone: phoneNumber,
-          macAddress,
-          deviceKey,
+          phone: phoneNumber,         
+          devices: devices,
           status: "Pending Activation",
           subscriptionID // store subscription ID for reference
         },
@@ -92,18 +93,48 @@ const CustomerDashboard = () => {
       console.log("✅ Customer record created/updated with subscription info.");
       setCustomer((prev) => ({
         ...prev,
-        phone: phoneNumber,
-        macAddress,
-        deviceKey,
+        phone: phoneNumber,        
+        devices: devices,
         status: "Pending Activation",
         subscriptionID
       }));
     } catch (error) {
       console.error("Error saving customer record:", error);
     }
+  };  
+  // Handle device changes
+  const handleDeviceChange = (index, field, value) => {
+    const updatedDevices = [...devices];
+    updatedDevices[index][field] = value;
+    setDevices(updatedDevices);
+  };
+  // Handle adding a device
+  const handleAddDevice = () => {
+    setDevices([...devices, newDevice()]);
   };
 
-  // Check if the form is complete (MAC, Device Key, and 10-digit phone)
+  // Handle removing a device
+  const handleRemoveDevice = (index) => {
+    const updatedDevices = [...devices];
+    updatedDevices.splice(index, 1);
+    setDevices(updatedDevices);
+  };
+
+  // check if all the devices have a device key and mac address
+  const isAllDevicesComplete = () => {
+    if (devices.length === 0) {
+      return false; // No devices added
+    }
+
+    return devices.every((device) => {
+      return (
+        device.macAddress &&
+        device.macAddress.trim() !== "" &&
+        device.deviceKey &&
+        device.deviceKey.trim() !== ""
+      );
+    });
+  };
   const isFormComplete =
     macAddress.trim() &&
     deviceKey.trim() &&
@@ -256,19 +287,36 @@ const CustomerDashboard = () => {
 
         {/* Step 2: Enter MAC IP & Device Key */}
         <div className="section-box">
-          <h4>🔑 Step 2: Enter MAC IP and Device Key</h4>
-          <input
-            type="text"
-            placeholder="Enter MAC Address"
-            value={macAddress}
-            onChange={(e) => setMacAddress(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Enter Device Key"
-            value={deviceKey}
-            onChange={(e) => setDeviceKey(e.target.value)}
-          />
+          <h4>🔑 Step 2: Enter Device Details</h4>
+          {devices.map((device, index) => (
+            <div key={index} className="device-inputs">
+              <input
+                type="text"
+                placeholder="Enter MAC Address"
+                value={device.macAddress}
+                onChange={(e) =>
+                  handleDeviceChange(index, "macAddress", e.target.value)
+                }
+              />
+              <input
+                type="text"
+                placeholder="Enter Device Key"
+                value={device.deviceKey}
+                onChange={(e) =>
+                  handleDeviceChange(index, "deviceKey", e.target.value)
+                }
+              />
+               {devices.length > 1 && (
+                <button onClick={() => handleRemoveDevice(index)}>-</button>
+              )}
+            </div>
+          ))}
+              <button onClick={handleAddDevice}>Add Device</button>
+          {/* Step 3: Enter Phone Number */}
+
+
+
+
         </div>
 
         {/* Step 3: Enter Phone Number */}
@@ -283,7 +331,7 @@ const CustomerDashboard = () => {
         </div>
 
         {/* Step 4: Subscribe via PayPal */}
-        {isFormComplete && (
+        {phoneNumber.replace(/\D/g, "").length === 10 && isAllDevicesComplete() && (
           <div className="section-box paypal-container">
             <h4>💳 Step 4: Subscribe via PayPal</h4>
             <PayPalButtons
