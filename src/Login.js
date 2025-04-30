@@ -102,7 +102,7 @@ const Login = () => {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>CableSync</h1>
+        <h1>StreamSync</h1>
         <p>Cable service made easy and affordable.</p>
         {showPhoneInput ? (
           <div className="phone-input">

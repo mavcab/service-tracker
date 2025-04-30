@@ -1,33 +1,49 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const express = require("express");
+const cors = require("cors");
+
 admin.initializeApp();
 
-exports.paypalWebhook = functions.https.onRequest(async (req, res) => {
-  // In production, you should verify the webhook signature.
-  const event = req.body;
+const app = express();
 
-  if (event.event_type === "BILLING.SUBSCRIPTION.CANCELLED") {
-    const subscriptionID = event.resource.id;
-    console.log("Received cancellation for subscription:", subscriptionID);
-    try {
-      const snapshot = await admin
-          .firestore()
-          .collection("customers")
+// Use CORS with no extra spaces in the object literal.
+app.use(cors({origin: true}));
+// Parse JSON request bodies.
+app.use(express.json());
+
+app.post("/webhook", async (req, res) => {
+  try {
+    console.log("Received webhook event:", req.body);
+
+    const eventType = req.body.event_type;
+    if (eventType === "BILLING.SUBSCRIPTION.CANCELLED") {
+      const subscriptionID = req.body.resource.id;
+      console.log("Subscription cancelled. ID:", subscriptionID);
+
+      // Find the customer with the matching subscription ID.
+      const customersRef = admin.firestore().collection("customers");
+      const snapshot = await customersRef
           .where("subscriptionID", "==", subscriptionID)
           .get();
       if (!snapshot.empty) {
         snapshot.forEach(async (docSnap) => {
+          console.log("Updating customer", docSnap.id, "to status 'Canceled'");
           await docSnap.ref.update({status: "Canceled"});
-          console.log("Updated customer", docSnap.id, "status to Canceled.");
         });
       } else {
-        console.log("No customer found with subscriptionID:", subscriptionID);
+        console.log(
+            "No matching customer found for subscriptionID:",
+            subscriptionID,
+        );
       }
-    } catch (error) {
-      console.error("Error updating customer status:", error);
-      res.status(500).send("Error");
-      return;
     }
+    // Respond to PayPal indicating the event was received.
+    res.status(200).send("Webhook received");
+  } catch (error) {
+    console.error("Error handling webhook:", error);
+    res.status(500).send("Internal Server Error");
   }
-  res.status(200).send("OK");
 });
+
+exports.webhook = functions.https.onRequest(app);
