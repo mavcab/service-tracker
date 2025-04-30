@@ -135,11 +135,6 @@ const CustomerDashboard = () => {
       );
     });
   };
-  const isFormComplete =
-    macAddress.trim() &&
-    deviceKey.trim() &&
-    phoneNumber.replace(/\D/g, "").length === 10;
-
   if (loading) return <p className="loading">Loading account details...</p>;
 
   // For display, treat any status that includes "Canceled" as "Canceled" in the UI.
@@ -199,7 +194,7 @@ const CustomerDashboard = () => {
               You canceled your PayPal subscription. Please reactivate your subscription to resume service. If you have questions, email <a href="mailto:streamsyncUS@gmail.com">streamsyncUS@gmail.com</a>.
             </p>
           </div>
-          {isFormComplete && (
+          {phoneNumber.replace(/\D/g, "").length === 10 && isAllDevicesComplete() && (
             <div className="section-box paypal-container">
               <h4>💳 Reactivate via PayPal</h4>
               <PayPalButtons
