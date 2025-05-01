@@ -110,6 +110,20 @@ const AdminDashboard = () => {
 
   const handleDeleteCustomer = async (id) => {
     if (!window.confirm('Are you sure you want to delete this customer?')) return;
+      try {
+      // Delete the document from Firestore
+      await deleteDoc(doc(db, 'customers', id));
+
+      // Update the local state to remove the customer
+      setCustomers(prevCustomers =>
+        prevCustomers.filter(customer => customer.id !== id)
+      );
+
+      console.log(`Customer with ID ${id} has been deleted.`);
+    } catch (error) {
+      console.error('Error deleting customer:', error);
+      alert('Error deleting customer.');
+    }
   };
   const getNotificationMessage = (status) => {
     if (status === 'Canceled') return 'Process cancellation of service.';
@@ -162,7 +176,6 @@ const AdminDashboard = () => {
             <th>Service Start</th>
             <th>Service End</th>
             <th>Actions</th>
-            <th id="notification-column">Notification</th>
             <th></th> {/* delete column */}
           </tr>
         </thead>
@@ -234,20 +247,6 @@ const AdminDashboard = () => {
                   >
                     End Service
                   </button>
-                )}
-              </td>
-              <td>
-                {customer.status === 'Canceled' && (
-                  <div className="notification">
-                    {getNotificationMessage(customer.status)}
-                    <br/>
-                    <button
-                      className="process-btn"
-                      onClick={() => handleProcessCancellation(customer.id)}
-                    >
-                      Mark as Processed
-                    </button>
-                  </div>
                 )}
               </td>
               <td>

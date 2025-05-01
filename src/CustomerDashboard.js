@@ -111,9 +111,12 @@ const CustomerDashboard = () => {
     setDevices(updatedDevices);
   };
 
-  // Handle adding a device
+  // Handle adding a device to the list of devices
   const handleAddDevice = () => {
     // Check if the maximum number of devices has been reached
+
+    // Update the devices state by adding a new device
+    //the if is also used to prevent the state from being updated when there is no more room
     if (devices.length < MAX_DEVICES) {
       setDevices([...devices, newDevice()]);
     }
@@ -314,7 +317,10 @@ const CustomerDashboard = () => {
               )}
             </div>
           ))}
+            {/* add device button is only displayed when there is room for more devices */}
+              {devices.length < MAX_DEVICES && (
               <button onClick={handleAddDevice}>Add Device</button>
+               )}
           {/* Step 3: Enter Phone Number */}
 
 
