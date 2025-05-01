@@ -1,10 +1,11 @@
 .dashboard-container {
   display: flex;
   justify-content: center;
+  flex-direction: column;
   align-items: center;
-  background-color: #f4f7fb;
+  background-color: #f0f0f0; /* Light grey background */
   min-height: 100vh;
-  padding: 40px 20px;
+  padding: 40px;
   font-family: Arial, sans-serif;
 }
 
@@ -14,6 +15,7 @@
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   max-width: 600px;
+  margin: 20px;
   width: 100%;
 }
 
@@ -63,12 +65,21 @@
   border-radius: 6px;
 }
 
+
+
+
 /* Section Boxes for Steps */
 .section-box {
-  background-color: #f5faff;
-  border-left: 5px solid #007bff;
+  background-color: #fff;
+  border: 2px solid #007bff;
   padding: 20px;
   border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+  margin-left: 10px;
+  margin-right: 10px;
+  display: flex;
+  flex-direction: column;
   margin-bottom: 15px;
   text-align: center;
 }
@@ -77,6 +88,7 @@
   font-size: 17px;
   margin-bottom: 10px;
   color: #333;
+  font-weight: bold; /* Bold section headers */
 }
 
 .section-box input {
@@ -89,31 +101,43 @@
   box-sizing: border-box;
 }
 
+
 /* App Links */
 .app-links {
   list-style: none;
   padding: 0;
-  margin: 12px 0;
+  margin: 20px 0;
 }
 
 .app-links li {
+  background-color: #f0f0f0;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .platform-logo {
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
   margin-right: 8px;
 }
 
+.app-links a {
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+}
+
+/* button styling */
 .instruction-toggle-btn {
   background-color: #007bff;
   color: #fff;
   border: none;
-  padding: 8px 14px;
+  padding: 10px 20px;
   border-radius: 5px;
   cursor: pointer;
   margin-top: 8px;
@@ -122,19 +146,36 @@
 .instruction-toggle-btn:hover {
   background-color: #0056b3;
 }
+.device-inputs button {
+  background-color: #dc3545; /* Red */
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.device-inputs button:hover {
+  background-color: #c82333; /* Darker Red */
+}
+
+
 
 .tv-instructions {
-  margin-top: 10px;
+  margin-top: 15px;
   background-color: #eef4fc;
   padding: 12px;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 16px;
   text-align: left;
 }
 
+
+
+/* success message */
 .success-message {
   text-align: center;
-  padding: 10px;
+  padding: 12px;
   color: green;
   font-weight: 600;
   background-color: #e8ffe9;

@@ -11,13 +11,16 @@ import {
 import { PayPalButtons } from "@paypal/react-paypal-js";
 import "./CustomerDashboard.css";
 
+// CustomerDashboard component
 const CustomerDashboard = () => {
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [devices, setDevices] = useState([]);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  // State to show or hide the tv instructions
   const [showInstructions, setShowInstructions] = useState(false);
+  const MAX_DEVICES = 3; // Maximum number of devices allowed
 
   const newDevice = () => ({ macAddress: "", deviceKey: "" });
 
@@ -77,7 +80,7 @@ const CustomerDashboard = () => {
   const handleSubscriptionSuccess = async (subscriptionID) => {
     setPaymentSuccess(true);
     try {
-      await setDoc(
+      await setDoc( // Update firestore with the new subscription
         doc(db, "customers", customer.id),
         {
           firstName: customer.firstName,
@@ -107,11 +110,16 @@ const CustomerDashboard = () => {
     updatedDevices[index][field] = value;
     setDevices(updatedDevices);
   };
+
   // Handle adding a device
   const handleAddDevice = () => {
-    setDevices([...devices, newDevice()]);
+    // Check if the maximum number of devices has been reached
+    if (devices.length < MAX_DEVICES) {
+      setDevices([...devices, newDevice()]);
+    }
   };
 
+  // Handle removing a device from the device list
   // Handle removing a device
   const handleRemoveDevice = (index) => {
     const updatedDevices = [...devices];
@@ -121,6 +129,7 @@ const CustomerDashboard = () => {
 
   // check if all the devices have a device key and mac address
   const isAllDevicesComplete = () => {
+    // If no device exists then return false
     if (devices.length === 0) {
       return false; // No devices added
     }
